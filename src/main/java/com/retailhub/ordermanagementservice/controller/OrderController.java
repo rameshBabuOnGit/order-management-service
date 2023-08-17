@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,5 +47,15 @@ public class OrderController {
     @GetMapping(value = "/cart-details")
     public ResponseEntity<List<OrderHeader>> retrieveCartDetails(@RequestParam int userId) {
         return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(userId), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Deletes products from cart")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "delete products from cart")
+    })
+    @DeleteMapping(value = "/delete-order")
+    public ResponseEntity<Void> deleteOrderFromCart(@RequestParam int userId, @RequestParam int productId) {
+        orderDetailsService.deleteOrderFromCart(userId, productId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

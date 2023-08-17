@@ -17,6 +17,7 @@ public class OrderService {
     private final OrderHeaderRepository orderHeaderRepository;
     private final OrderDetailsRepository orderDetailsRepository;
     private static final String ORDER_STATUS_DRAFT = "DRAFT";
+    private static final String ORDER_STATUS_CANCELLED = "CANCELLED";
 
     public OrderService(OrderHeaderRepository orderHeaderRepository, OrderDetailsRepository orderDetailsRepository) {
         this.orderHeaderRepository = orderHeaderRepository;
@@ -50,6 +51,10 @@ public class OrderService {
 
     public List<OrderHeader> retrieveCartDetails(int userId) {
         return orderHeaderRepository.retrieveOrderDetails(userId, ORDER_STATUS_DRAFT);
+    }
+
+    public void deleteOrderFromCart(int userId, int productId) {
+        orderHeaderRepository.deleteOrderFromCart(userId, productId, ORDER_STATUS_CANCELLED);
     }
 
 }

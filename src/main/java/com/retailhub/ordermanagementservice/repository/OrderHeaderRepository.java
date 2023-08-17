@@ -21,6 +21,9 @@ public class OrderHeaderRepository {
     private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, user_id, product_id, total_amount, order_status " +
             "FROM orders WHERE user_id = :userId AND order_status = :orderStatus";
 
+    private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE user_id = :userId " +
+            "AND product_id = :productId";
+
     private final RowMapper<OrderHeader> orderHeaderRowMapper = orderHeaderRowMapper();
 
     public OrderHeaderRepository(NamedParameterJdbcTemplate jdbcTemplate) {
@@ -28,9 +31,7 @@ public class OrderHeaderRepository {
     }
 
     public List<OrderHeader> retrieveOrderDetails(int userId, String orderStatus) {
-        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
-        parameterSource.addValue("userId", userId);
-        parameterSource.addValue("orderStatus", orderStatus);
+        MapSqlParameterSource parameterSource = parameterSourceForUserIdAndOrderStatus(userId, 0, orderStatus);
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, parameterSource, orderHeaderRowMapper);
     }
 
@@ -42,6 +43,22 @@ public class OrderHeaderRepository {
         } else {
             throw new RuntimeException("Insert failed for user : " + orderHeader);
         }
+    }
+
+    public void deleteOrderFromCart(int userId, int productId, String orderStatus) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForUserIdAndOrderStatus(userId, productId, orderStatus);
+        int updatedRows = jdbcTemplate.update(DELETE_ORDER_FROM_CART, mapSqlParameterSource);
+        log.info("No of rows updated for delete cart API : {}", updatedRows);
+    }
+
+    private static MapSqlParameterSource parameterSourceForUserIdAndOrderStatus(int userId, int productId, String orderStatus) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("userId", userId);
+        parameterSource.addValue("orderStatus", orderStatus);
+        if (productId != 0) {
+            parameterSource.addValue("productId", productId);
+        }
+        return parameterSource;
     }
 
     private static void enrichOrderDetailsWithOrderId(OrderHeader orderHeader) {
