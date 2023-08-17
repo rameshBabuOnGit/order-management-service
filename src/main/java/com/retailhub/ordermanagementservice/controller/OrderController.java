@@ -1,6 +1,7 @@
 package com.retailhub.ordermanagementservice.controller;
 
 import com.retailhub.ordermanagementservice.model.CartDetails;
+import com.retailhub.ordermanagementservice.model.OrderHeader;
 import com.retailhub.ordermanagementservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -8,10 +9,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -32,5 +37,14 @@ public class OrderController {
     public ResponseEntity<Void> insertOrderDetails(@RequestBody CartDetails cartDetails) {
         orderDetailsService.insertOrderDetails(cartDetails);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Retrieves cart details for a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "retrieve cart details")
+    })
+    @GetMapping(value = "/cart-details")
+    public ResponseEntity<List<OrderHeader>> retrieveCartDetails(@RequestParam int userId) {
+        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(userId), HttpStatus.OK);
     }
 }

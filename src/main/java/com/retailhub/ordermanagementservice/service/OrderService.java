@@ -9,11 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 public class OrderService {
     private final OrderHeaderRepository orderHeaderRepository;
     private final OrderDetailsRepository orderDetailsRepository;
+    private static final String ORDER_STATUS_DRAFT = "DRAFT";
 
     public OrderService(OrderHeaderRepository orderHeaderRepository, OrderDetailsRepository orderDetailsRepository) {
         this.orderHeaderRepository = orderHeaderRepository;
@@ -43,6 +46,10 @@ public class OrderService {
                 .totalAmount(cartDetails.getTotalAmount())
                 .build();
         return orderHeader;
+    }
+
+    public List<OrderHeader> retrieveCartDetails(int userId) {
+        return orderHeaderRepository.retrieveOrderDetails(userId, ORDER_STATUS_DRAFT);
     }
 
 }

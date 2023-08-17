@@ -8,17 +8,30 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 @Slf4j
 public class OrderHeaderRepository {
+    private static final String ORDER_STATUS_DRAFT = "DRAFT";
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private static final String INSERT_ORDER_HEADER = "INSERT INTO orders" +
             "(user_id, order_id, product_id, total_amount, order_status) " +
             "VALUES (:userId, :orderId, :productId, :totalAmount, :orderStatus)";
+    private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, user_id, product_id, total_amount, order_status " +
+            "FROM orders WHERE user_id = :userId AND order_status = :orderStatus";
+
     private final RowMapper<OrderHeader> orderHeaderRowMapper = orderHeaderRowMapper();
 
     public OrderHeaderRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public List<OrderHeader> retrieveOrderDetails(int userId, String orderStatus) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("userId", userId);
+        parameterSource.addValue("orderStatus", orderStatus);
+        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, parameterSource, orderHeaderRowMapper);
     }
 
     public void insertOrderHeader(OrderHeader orderHeader) {
@@ -42,7 +55,7 @@ public class OrderHeaderRepository {
         mapSqlParameterSource.addValue("orderId", orderHeader.getOrderId());
         mapSqlParameterSource.addValue("productId", orderHeader.getProductId());
         mapSqlParameterSource.addValue("totalAmount", orderHeader.getTotalAmount());
-        mapSqlParameterSource.addValue("orderStatus", "DRAFT");
+        mapSqlParameterSource.addValue("orderStatus", ORDER_STATUS_DRAFT);
         return mapSqlParameterSource;
     }
     private RowMapper<OrderHeader> orderHeaderRowMapper() {
