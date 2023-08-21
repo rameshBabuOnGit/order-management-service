@@ -45,8 +45,8 @@ public class OrderController {
             @ApiResponse(responseCode = "200", description = "retrieve cart details")
     })
     @GetMapping(value = "/cart-details")
-    public ResponseEntity<List<OrderHeader>> retrieveCartDetails(@RequestParam int userId) {
-        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(userId), HttpStatus.OK);
+    public ResponseEntity<List<CartDetails>> retrieveCartDetails(@RequestParam int orderId) {
+        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(orderId), HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes products from cart")

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,11 +43,19 @@ public class OrderService {
         orderDetailsList.stream().forEach(orderDetail -> orderDetail.setOrderId(newOrderId));
     }
 
-//    public List<CartDetails> retrieveCartDetails(int userId) {
-//        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetails(userId, ORDER_STATUS_DRAFT);
-//        List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
-//        List<Integer> orderheaderIdList = orderHeaders.stream().map(OrderHeader::getOrderId).collect(Collectors.toList());
-//    }
+    public List<CartDetails> retrieveCartDetails(int userId) {
+        List<CartDetails> cartDetailsList = new ArrayList<>();
+        CartDetails cartDetails = new CartDetails();
+        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetails(userId, ORDER_STATUS_DRAFT);
+        List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
+        for(OrderHeader orderHeader : orderHeaders) {
+            List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).collect(Collectors.toList());
+            cartDetails.setOrderHeader(orderHeader);
+            cartDetails.setOrderDetailsList(orderDetailsList);
+            cartDetailsList.add(cartDetails);
+        }
+        return cartDetailsList;
+    }
 
     public void deleteOrderFromCart(int userId, int productId) {
         orderHeaderRepository.deleteOrderFromCart(userId, productId, ORDER_STATUS_CANCELLED);

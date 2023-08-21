@@ -10,6 +10,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 
 @Repository
 @Slf4j
@@ -18,10 +20,10 @@ public class OrderDetailsRepository {
 
     private static final String INSERT_ORDER_DETAILS = "INSERT INTO order_details(order_id, product_id, quantity, product_name, product_price)" +
             " VALUES (:orderId, :productId, :quantity, :productName, :productPrice)";
-//    private static final String RETRIEVE_ORDER_ID = "SELECT order_id from orders WHERE user_id = :userId " +
-//            "AND product_id = :productId";
+    private static final String RETRIEVE_ORDER_ID = "SELECT order_id from orders WHERE user_id = :userId " +
+            "AND product_id = :productId";
 
-//    private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details";
+    private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details";
 
     private final RowMapper<OrderDetails> orderDetailsRowMapper = orderDetailsRowMapper();
 
@@ -53,9 +55,9 @@ public class OrderDetailsRepository {
         }
     }
 
-//    public List<OrderDetails> retrieveOrderDetails() {
-//        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, orderDetailsRowMapper);
-//    }
+    public List<OrderDetails> retrieveOrderDetails() {
+        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, orderDetailsRowMapper);
+    }
 
     private SqlParameterSource[] parametersToInsertOrderDetails(List<OrderDetails> orderDetailsList) {
         SqlParameterSource[] batchArgs = new SqlParameterSource[orderDetailsList.size()];

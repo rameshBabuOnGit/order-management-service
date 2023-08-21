@@ -32,10 +32,10 @@ public class OrderHeaderRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-//    public List<OrderHeader> retrieveOrderHeaderDetails(int userId, String orderStatus) {
-//        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, 0, orderStatus);
-//        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS, parameterSource, orderHeaderRowMapper);
-//    }
+    public List<OrderHeader> retrieveOrderHeaderDetails(int userId, String orderStatus) {
+        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, 0, orderStatus);
+        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS, parameterSource, orderHeaderRowMapper);
+    }
 
     public void insertOrderHeader(OrderHeader orderHeader) {
         int orderHeaderUpdated = jdbcTemplate.update(INSERT_ORDER_HEADER, parameterToInsertOrderHeader(orderHeader));
