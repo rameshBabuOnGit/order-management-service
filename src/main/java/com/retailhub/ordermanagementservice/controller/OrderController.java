@@ -1,6 +1,5 @@
 package com.retailhub.ordermanagementservice.controller;
 
-import com.retailhub.ordermanagementservice.model.CartDetails;
 import com.retailhub.ordermanagementservice.model.CartDetailsDTO;
 import com.retailhub.ordermanagementservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
