@@ -36,8 +36,8 @@ public class OrderController {
             @ApiResponse(responseCode = "201", description = "add to cart")
     })
     @PostMapping(value = "/add-to-cart")
-    public ResponseEntity<Void> insertOrderDetails(@RequestBody CartDetails cartDetails) {
-        orderDetailsService.insertOrderDetails(cartDetails);
+    public ResponseEntity<Void> insertOrderDetails(@RequestBody CartDetailsDTO cartDetailsDTO) {
+        orderDetailsService.insertOrderDetails(cartDetailsDTO);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

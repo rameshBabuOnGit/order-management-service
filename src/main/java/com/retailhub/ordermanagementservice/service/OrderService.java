@@ -30,10 +30,42 @@ public class OrderService {
     }
 
     @Transactional
-    public void insertOrderDetails(CartDetails cartDetails) {
+    public void insertOrderDetails(CartDetailsDTO cartDetailsDTO) {
+        CartDetails cartDetails = transformCartDetailsDTOToCartDetails(cartDetailsDTO);
         enrichOrderHeaderAndOrderDetailsWithOrderId(cartDetails.getOrderHeader(), cartDetails.getOrderDetailsList());
         orderHeaderRepository.insertOrderHeader(cartDetails.getOrderHeader());
         orderDetailsRepository.insertOrderDetails(cartDetails.getOrderDetailsList());
+    }
+
+    private CartDetails transformCartDetailsDTOToCartDetails(CartDetailsDTO cartDetailsDTO) {
+        OrderHeader orderHeader = buildOrderHeaderFromCartDetailsDTO(cartDetailsDTO);
+        List<OrderDetails> orderDetails = transformCartLinesDTOToOrderDetails(cartDetailsDTO);
+        return CartDetails.builder()
+                .orderHeader(orderHeader)
+                .orderDetailsList(orderDetails)
+                .build();
+    }
+
+    private static OrderHeader buildOrderHeaderFromCartDetailsDTO(CartDetailsDTO cartDetailsDTO) {
+        return OrderHeader.builder()
+                .orderId(cartDetailsDTO.getOrderId())
+                .userId(cartDetailsDTO.getUserId())
+                .totalOrderValue(cartDetailsDTO.getTotalOrderValue())
+                .orderStatus(cartDetailsDTO.getOrderStatus())
+                .build();
+    }
+
+    private List<OrderDetails> transformCartLinesDTOToOrderDetails(CartDetailsDTO cartDetailsDTO) {
+        return cartDetailsDTO.getCartLineDetailsDTOList().stream()
+                .map(cartLineDetailsDTO -> {
+                    OrderDetails orderDetails = new OrderDetails();
+                    orderDetails.setProductId(cartLineDetailsDTO.getProductId());
+                    orderDetails.setProductName(cartLineDetailsDTO.getProductName());
+                    orderDetails.setProductPrice(cartLineDetailsDTO.getProductPrice());
+                    orderDetails.setQuantity(cartLineDetailsDTO.getQuantity());
+                    return orderDetails;
+                })
+                .collect(Collectors.toList());
     }
 
     private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
