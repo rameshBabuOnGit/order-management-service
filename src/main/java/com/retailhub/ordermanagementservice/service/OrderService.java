@@ -1,6 +1,8 @@
 package com.retailhub.ordermanagementservice.service;
 
 import com.retailhub.ordermanagementservice.model.CartDetails;
+import com.retailhub.ordermanagementservice.model.CartDetailsDTO;
+import com.retailhub.ordermanagementservice.model.CartLineDetailsDTO;
 import com.retailhub.ordermanagementservice.model.OrderDetails;
 import com.retailhub.ordermanagementservice.model.OrderHeader;
 import com.retailhub.ordermanagementservice.repository.OrderDetailsRepository;
@@ -43,18 +45,38 @@ public class OrderService {
         orderDetailsList.stream().forEach(orderDetail -> orderDetail.setOrderId(newOrderId));
     }
 
-    public List<CartDetails> retrieveCartDetails(int userId) {
-        List<CartDetails> cartDetailsList = new ArrayList<>();
-        CartDetails cartDetails = new CartDetails();
+    public List<CartDetailsDTO> retrieveCartDetails(int userId) {
+        List<CartDetailsDTO> cartDetailsDTOList = new ArrayList<>();
         List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetails(userId, ORDER_STATUS_DRAFT);
         List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
         for(OrderHeader orderHeader : orderHeaders) {
             List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).collect(Collectors.toList());
-            cartDetails.setOrderHeader(orderHeader);
-            cartDetails.setOrderDetailsList(orderDetailsList);
-            cartDetailsList.add(cartDetails);
+            cartDetailsDTOList.add(transformCartDetailsToDTO(orderHeader, orderDetailsList));
         }
-        return cartDetailsList;
+        return cartDetailsDTOList;
+    }
+
+    private CartDetailsDTO transformCartDetailsToDTO(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
+        CartDetailsDTO cartDetailsDTO = new CartDetailsDTO();
+        cartDetailsDTO.setOrderId(orderHeader.getOrderId());
+        cartDetailsDTO.setUserId(orderHeader.getUserId());
+        cartDetailsDTO.setTotalOrderValue(orderHeader.getTotalOrderValue());
+        cartDetailsDTO.setOrderStatus(orderHeader.getOrderStatus());
+        cartDetailsDTO.setCartLineDetailsDTOList(transformOrderDetailsToCartDetailsDTO(orderDetailsList));
+        return cartDetailsDTO;
+    }
+
+    private List<CartLineDetailsDTO> transformOrderDetailsToCartDetailsDTO(List<OrderDetails> orderDetailsList) {
+        return orderDetailsList.stream()
+                .map(orderDetails -> {
+                    CartLineDetailsDTO cartLine = new CartLineDetailsDTO();
+                    cartLine.setProductId(orderDetails.getProductId());
+                    cartLine.setProductName(orderDetails.getProductName());
+                    cartLine.setProductPrice(orderDetails.getProductPrice());
+                    cartLine.setQuantity(orderDetails.getQuantity());
+                    return cartLine;
+                })
+                .collect(Collectors.toList());
     }
 
     public void deleteOrderFromCart(int userId, int productId) {

@@ -1,7 +1,7 @@
 package com.retailhub.ordermanagementservice.controller;
 
 import com.retailhub.ordermanagementservice.model.CartDetails;
-import com.retailhub.ordermanagementservice.model.OrderHeader;
+import com.retailhub.ordermanagementservice.model.CartDetailsDTO;
 import com.retailhub.ordermanagementservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -45,8 +45,8 @@ public class OrderController {
             @ApiResponse(responseCode = "200", description = "retrieve cart details")
     })
     @GetMapping(value = "/cart-details")
-    public ResponseEntity<List<CartDetails>> retrieveCartDetails(@RequestParam int orderId) {
-        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(orderId), HttpStatus.OK);
+    public ResponseEntity<List<CartDetailsDTO>> retrieveCartDetails(@RequestParam int userId) {
+        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(userId), HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes products from cart")
