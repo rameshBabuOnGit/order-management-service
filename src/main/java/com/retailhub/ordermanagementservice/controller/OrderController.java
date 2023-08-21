@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,9 +54,9 @@ public class OrderController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "delete products from cart")
     })
-    @DeleteMapping(value = "/delete-order")
-    public ResponseEntity<Void> deleteOrderFromCart(@RequestParam int userId, @RequestParam int productId) {
-        orderDetailsService.deleteOrderFromCart(userId, productId);
+    @DeleteMapping(value = "/delete-order/{orderId}")
+    public ResponseEntity<Void> deleteOrderFromCart(@PathVariable int orderId) {
+        orderDetailsService.deleteOrderFromCart(orderId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

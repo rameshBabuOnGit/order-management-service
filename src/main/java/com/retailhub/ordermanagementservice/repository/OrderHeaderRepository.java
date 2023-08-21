@@ -1,5 +1,6 @@
 package com.retailhub.ordermanagementservice.repository;
 
+import com.retailhub.ordermanagementservice.exception.NotFoundException;
 import com.retailhub.ordermanagementservice.model.OrderHeader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,8 +21,7 @@ public class OrderHeaderRepository {
     private static final String RETRIEVE_ORDER_HEADER_DETAILS = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId AND order_status = :orderStatus";
 
-    private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE user_id = :userId " +
-            "AND product_id = :productId";
+    private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE order_id = :orderId ";
 
     private static final String RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId";
@@ -33,7 +33,7 @@ public class OrderHeaderRepository {
     }
 
     public List<OrderHeader> retrieveOrderHeaderDetails(int userId, String orderStatus) {
-        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, 0, orderStatus);
+        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, orderStatus);
         return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS, parameterSource, orderHeaderRowMapper);
     }
 
@@ -46,19 +46,26 @@ public class OrderHeaderRepository {
         }
     }
 
-    public void deleteOrderFromCart(int userId, int productId, String orderStatus) {
-        MapSqlParameterSource mapSqlParameterSource = parameterSourceForOrderIdAndOrderStatus(userId, productId, orderStatus);
+    public void deleteOrderFromCart(int orderId, String orderStatus) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForDeletingOrder(orderId, orderStatus);
         int updatedRows = jdbcTemplate.update(DELETE_ORDER_FROM_CART, mapSqlParameterSource);
         log.info("No of rows updated for delete cart API : {}", updatedRows);
+        if (updatedRows == 0) {
+            throw new NotFoundException("Order Id not found : " + orderId);
+        }
     }
 
-    private static MapSqlParameterSource parameterSourceForOrderIdAndOrderStatus(int userId, int productId, String orderStatus) {
+    private static MapSqlParameterSource parameterSourceForOrderIdAndOrderStatus(int userId, String orderStatus) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("userId", userId);
         parameterSource.addValue("orderStatus", orderStatus);
-        if (productId != 0) {
-            parameterSource.addValue("productId", productId);
-        }
+        return parameterSource;
+    }
+
+    private static MapSqlParameterSource parameterSourceForDeletingOrder(int orderId, String orderStatus) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        parameterSource.addValue("orderStatus", orderStatus);
         return parameterSource;
     }
 

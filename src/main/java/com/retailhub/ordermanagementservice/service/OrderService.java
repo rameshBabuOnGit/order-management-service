@@ -79,8 +79,9 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public void deleteOrderFromCart(int userId, int productId) {
-        orderHeaderRepository.deleteOrderFromCart(userId, productId, ORDER_STATUS_CANCELLED);
+    @Transactional
+    public void deleteOrderFromCart(int orderId) {
+        orderHeaderRepository.deleteOrderFromCart(orderId, ORDER_STATUS_CANCELLED);
     }
 
 }

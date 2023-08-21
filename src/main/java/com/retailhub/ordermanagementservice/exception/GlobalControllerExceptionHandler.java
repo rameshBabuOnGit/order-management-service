@@ -17,6 +17,11 @@ public class GlobalControllerExceptionHandler extends ResponseEntityExceptionHan
         return new ResponseEntity<>(createExceptionInfoModel(request, exception), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ExceptionInfoModel> notFoundExceptionHandler(HttpServletRequest request, NotFoundException exception) {
+        return new ResponseEntity<>(createExceptionInfoModel(request, exception), HttpStatus.NOT_FOUND);
+    }
+
     private ExceptionInfoModel createExceptionInfoModel(HttpServletRequest request, Exception exception) {
         return new ExceptionInfoModel(request.getRequestURI(), exception);
     }
