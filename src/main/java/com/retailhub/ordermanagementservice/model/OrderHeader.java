@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class OrderHeader {
     private int orderId;
     private int userId;
-    private int productId;
-    private int totalAmount;
+    private int totalOrderValue;
     private String orderStatus;
 }

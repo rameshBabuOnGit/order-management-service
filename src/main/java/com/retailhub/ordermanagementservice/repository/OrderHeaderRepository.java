@@ -1,7 +1,6 @@
 package com.retailhub.ordermanagementservice.repository;
 
 import com.retailhub.ordermanagementservice.model.OrderHeader;
-import com.retailhub.ordermanagementservice.util.OrderIdGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -16,13 +15,16 @@ public class OrderHeaderRepository {
     private static final String ORDER_STATUS_DRAFT = "DRAFT";
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private static final String INSERT_ORDER_HEADER = "INSERT INTO orders" +
-            "(user_id, order_id, product_id, total_amount, order_status) " +
-            "VALUES (:userId, :orderId, :productId, :totalAmount, :orderStatus)";
-    private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, user_id, product_id, total_amount, order_status " +
+            "(user_id, order_id, total_order_value, order_status) " +
+            "VALUES (:userId, :orderId, :totalOrderValue, :orderStatus)";
+    private static final String RETRIEVE_ORDER_HEADER_DETAILS = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId AND order_status = :orderStatus";
 
     private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE user_id = :userId " +
             "AND product_id = :productId";
+
+    private static final String RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER = "SELECT order_id, user_id, total_order_value, order_status " +
+            "FROM orders WHERE user_id = :userId";
 
     private final RowMapper<OrderHeader> orderHeaderRowMapper = orderHeaderRowMapper();
 
@@ -30,13 +32,12 @@ public class OrderHeaderRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<OrderHeader> retrieveOrderDetails(int userId, String orderStatus) {
-        MapSqlParameterSource parameterSource = parameterSourceForUserIdAndOrderStatus(userId, 0, orderStatus);
-        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, parameterSource, orderHeaderRowMapper);
-    }
+//    public List<OrderHeader> retrieveOrderHeaderDetails(int userId, String orderStatus) {
+//        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, 0, orderStatus);
+//        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS, parameterSource, orderHeaderRowMapper);
+//    }
 
     public void insertOrderHeader(OrderHeader orderHeader) {
-        enrichOrderDetailsWithOrderId(orderHeader);
         int orderHeaderUpdated = jdbcTemplate.update(INSERT_ORDER_HEADER, parameterToInsertOrderHeader(orderHeader));
         if (orderHeaderUpdated == 1) {
             log.info("Inserted orders for user : {}", orderHeader);
@@ -46,12 +47,12 @@ public class OrderHeaderRepository {
     }
 
     public void deleteOrderFromCart(int userId, int productId, String orderStatus) {
-        MapSqlParameterSource mapSqlParameterSource = parameterSourceForUserIdAndOrderStatus(userId, productId, orderStatus);
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForOrderIdAndOrderStatus(userId, productId, orderStatus);
         int updatedRows = jdbcTemplate.update(DELETE_ORDER_FROM_CART, mapSqlParameterSource);
         log.info("No of rows updated for delete cart API : {}", updatedRows);
     }
 
-    private static MapSqlParameterSource parameterSourceForUserIdAndOrderStatus(int userId, int productId, String orderStatus) {
+    private static MapSqlParameterSource parameterSourceForOrderIdAndOrderStatus(int userId, int productId, String orderStatus) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("userId", userId);
         parameterSource.addValue("orderStatus", orderStatus);
@@ -61,17 +62,18 @@ public class OrderHeaderRepository {
         return parameterSource;
     }
 
-    private static void enrichOrderDetailsWithOrderId(OrderHeader orderHeader) {
-        int orderId = OrderIdGenerator.generateOrderId();
-        orderHeader.setOrderId(orderId);
+    public List<OrderHeader> getOrderHeadersForAUser(OrderHeader orderHeader) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("userId", orderHeader.getUserId());
+        List<OrderHeader> orderHeaders = jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER, parameterSource, orderHeaderRowMapper);
+        return orderHeaders;
     }
 
     private MapSqlParameterSource parameterToInsertOrderHeader(OrderHeader orderHeader) {
         MapSqlParameterSource mapSqlParameterSource = new MapSqlParameterSource();
         mapSqlParameterSource.addValue("userId", orderHeader.getUserId());
         mapSqlParameterSource.addValue("orderId", orderHeader.getOrderId());
-        mapSqlParameterSource.addValue("productId", orderHeader.getProductId());
-        mapSqlParameterSource.addValue("totalAmount", orderHeader.getTotalAmount());
+        mapSqlParameterSource.addValue("totalOrderValue", orderHeader.getTotalOrderValue());
         mapSqlParameterSource.addValue("orderStatus", ORDER_STATUS_DRAFT);
         return mapSqlParameterSource;
     }
@@ -79,8 +81,7 @@ public class OrderHeaderRepository {
         return (rs, rowNum) -> OrderHeader.builder()
                 .userId(rs.getInt("user_id"))
                 .orderId(rs.getInt("order_id"))
-                .productId(rs.getInt("product_id"))
-                .totalAmount(rs.getInt("total_amount"))
+                .totalOrderValue(rs.getInt("total_order_value"))
                 .orderStatus(rs.getString("order_status"))
                 .build();
     }

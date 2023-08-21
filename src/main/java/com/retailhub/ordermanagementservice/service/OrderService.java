@@ -5,11 +5,13 @@ import com.retailhub.ordermanagementservice.model.OrderDetails;
 import com.retailhub.ordermanagementservice.model.OrderHeader;
 import com.retailhub.ordermanagementservice.repository.OrderDetailsRepository;
 import com.retailhub.ordermanagementservice.repository.OrderHeaderRepository;
+import com.retailhub.ordermanagementservice.util.OrderIdGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,32 +28,25 @@ public class OrderService {
 
     @Transactional
     public void insertOrderDetails(CartDetails cartDetails) {
-        OrderHeader orderHeader = buildOrderHeader(cartDetails);
-        OrderDetails orderDetails = buildOrderDetails(cartDetails);
-        orderHeaderRepository.insertOrderHeader(orderHeader);
-        orderDetailsRepository.insertOrderDetails(orderDetails);
+        enrichOrderHeaderAndOrderDetailsWithOrderId(cartDetails.getOrderHeader(), cartDetails.getOrderDetailsList());
+        orderHeaderRepository.insertOrderHeader(cartDetails.getOrderHeader());
+        orderDetailsRepository.insertOrderDetails(cartDetails.getOrderDetailsList());
     }
 
-    private static OrderDetails buildOrderDetails(CartDetails cartDetails) {
-        OrderDetails orderDetails = OrderDetails.builder()
-                .productId(cartDetails.getProductId())
-                .quantity(cartDetails.getQuantity())
-                .build();
-        return orderDetails;
+    private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
+        int orderId = orderHeader.getOrderId() == 0 ? OrderIdGenerator.generateOrderId() : orderHeader.getOrderId();
+        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersForAUser(orderHeader);
+        boolean isOrderIdPresent = orderHeaders.stream().anyMatch(orderHeaderData -> orderHeaderData.getOrderId() == orderId);
+        int newOrderId = isOrderIdPresent ? OrderIdGenerator.generateOrderId() : orderId;
+        orderHeader.setOrderId(newOrderId);
+        orderDetailsList.stream().forEach(orderDetail -> orderDetail.setOrderId(newOrderId));
     }
 
-    private static OrderHeader buildOrderHeader(CartDetails cartDetails) {
-        OrderHeader orderHeader = OrderHeader.builder()
-                .userId(cartDetails.getUserId())
-                .productId(cartDetails.getProductId())
-                .totalAmount(cartDetails.getTotalAmount())
-                .build();
-        return orderHeader;
-    }
-
-    public List<OrderHeader> retrieveCartDetails(int userId) {
-        return orderHeaderRepository.retrieveOrderDetails(userId, ORDER_STATUS_DRAFT);
-    }
+//    public List<CartDetails> retrieveCartDetails(int userId) {
+//        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetails(userId, ORDER_STATUS_DRAFT);
+//        List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
+//        List<Integer> orderheaderIdList = orderHeaders.stream().map(OrderHeader::getOrderId).collect(Collectors.toList());
+//    }
 
     public void deleteOrderFromCart(int userId, int productId) {
         orderHeaderRepository.deleteOrderFromCart(userId, productId, ORDER_STATUS_CANCELLED);
