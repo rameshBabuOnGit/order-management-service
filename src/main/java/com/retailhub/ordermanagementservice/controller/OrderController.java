@@ -47,7 +47,16 @@ public class OrderController {
     })
     @GetMapping(value = "/cart-details")
     public ResponseEntity<List<CartDetailsDTO>> retrieveCartDetails(@RequestParam int userId) {
-        return new ResponseEntity<>(orderDetailsService.retrieveCartDetails(userId), HttpStatus.OK);
+        return new ResponseEntity<>(orderDetailsService.retrieveCartDetailsByDraftStatus(userId), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Retrieves order details for a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "retrieve order details")
+    })
+    @GetMapping(value = "/details")
+    public ResponseEntity<List<CartDetailsDTO>> retrieveOrderDetails(@RequestParam int userId) {
+        return new ResponseEntity<>(orderDetailsService.retrieveOrderDetails(userId), HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes products from cart")

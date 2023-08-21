@@ -45,15 +45,24 @@ public class OrderService {
         orderDetailsList.stream().forEach(orderDetail -> orderDetail.setOrderId(newOrderId));
     }
 
-    public List<CartDetailsDTO> retrieveCartDetails(int userId) {
+    public List<CartDetailsDTO> retrieveCartDetailsByDraftStatus(int userId) {
+        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetailsByUserAndStatus(userId, ORDER_STATUS_DRAFT);
+        return retrieveCartDetails(orderHeaders);
+    }
+
+    private List<CartDetailsDTO> retrieveCartDetails(List<OrderHeader> orderHeaders) {
         List<CartDetailsDTO> cartDetailsDTOList = new ArrayList<>();
-        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetails(userId, ORDER_STATUS_DRAFT);
         List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
         for(OrderHeader orderHeader : orderHeaders) {
             List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).collect(Collectors.toList());
             cartDetailsDTOList.add(transformCartDetailsToDTO(orderHeader, orderDetailsList));
         }
         return cartDetailsDTOList;
+    }
+
+    public List<CartDetailsDTO> retrieveOrderDetails(int userId) {
+        List<OrderHeader> orderHeaders = orderHeaderRepository.retrieveOrderHeaderDetailsByUser(userId, null);
+        return retrieveCartDetails(orderHeaders);
     }
 
     private CartDetailsDTO transformCartDetailsToDTO(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {

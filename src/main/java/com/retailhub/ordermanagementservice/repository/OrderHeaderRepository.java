@@ -18,8 +18,11 @@ public class OrderHeaderRepository {
     private static final String INSERT_ORDER_HEADER = "INSERT INTO orders" +
             "(user_id, order_id, total_order_value, order_status) " +
             "VALUES (:userId, :orderId, :totalOrderValue, :orderStatus)";
-    private static final String RETRIEVE_ORDER_HEADER_DETAILS = "SELECT order_id, user_id, total_order_value, order_status " +
+    private static final String RETRIEVE_ORDER_HEADER_DETAILS_BY_USER_AND_STATUS = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId AND order_status = :orderStatus";
+
+    private static final String RETRIEVE_ORDER_HEADER_DETAILS_BY_USER = "SELECT order_id, user_id, total_order_value, order_status " +
+            "FROM orders WHERE user_id = :userId";
 
     private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE order_id = :orderId ";
 
@@ -32,10 +35,16 @@ public class OrderHeaderRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<OrderHeader> retrieveOrderHeaderDetails(int userId, String orderStatus) {
-        MapSqlParameterSource parameterSource = parameterSourceForOrderIdAndOrderStatus(userId, orderStatus);
-        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS, parameterSource, orderHeaderRowMapper);
+    public List<OrderHeader> retrieveOrderHeaderDetailsByUserAndStatus(int userId, String orderStatus) {
+        MapSqlParameterSource parameterSource = parameterSourceForUserIdAndOrderStatus(userId, orderStatus);
+        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS_BY_USER_AND_STATUS, parameterSource, orderHeaderRowMapper);
     }
+
+    public List<OrderHeader> retrieveOrderHeaderDetailsByUser(int userId, String orderStatus) {
+        MapSqlParameterSource parameterSource = parameterSourceForUserIdAndOrderStatus(userId, orderStatus);
+        return jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS_BY_USER, parameterSource, orderHeaderRowMapper);
+    }
+
 
     public void insertOrderHeader(OrderHeader orderHeader) {
         int orderHeaderUpdated = jdbcTemplate.update(INSERT_ORDER_HEADER, parameterToInsertOrderHeader(orderHeader));
@@ -55,10 +64,12 @@ public class OrderHeaderRepository {
         }
     }
 
-    private static MapSqlParameterSource parameterSourceForOrderIdAndOrderStatus(int userId, String orderStatus) {
+    private static MapSqlParameterSource parameterSourceForUserIdAndOrderStatus(int userId, String orderStatus) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("userId", userId);
-        parameterSource.addValue("orderStatus", orderStatus);
+        if (orderStatus != null) {
+            parameterSource.addValue("orderStatus", orderStatus);
+        }
         return parameterSource;
     }
 
