@@ -63,8 +63,8 @@ public class OrderController {
             @ApiResponse(responseCode = "204", description = "delete products from cart")
     })
     @DeleteMapping(value = "/delete-order/{orderId}")
-    public ResponseEntity<Void> deleteOrderFromCart(@PathVariable int orderId) {
-        orderDetailsService.deleteOrderFromCart(orderId);
+    public ResponseEntity<Void> deleteOrderFromCart(@PathVariable int orderId, @RequestParam int productId) {
+        orderDetailsService.deleteOrderFromCart(orderId, productId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

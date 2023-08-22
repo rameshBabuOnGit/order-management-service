@@ -121,8 +121,21 @@ public class OrderService {
     }
 
     @Transactional
-    public void deleteOrderFromCart(int orderId) {
-        orderHeaderRepository.deleteOrderFromCart(orderId, ORDER_STATUS_CANCELLED);
+    public void deleteOrderFromCart(int orderId, int productId) {
+        orderDetailsRepository.deleteProductFromCart(orderId, productId, 0);
+        int totalQuantity = getTotalQuantityForOrderId(orderId);
+        if (totalQuantity == 0) {
+            orderHeaderRepository.deleteOrderFromCart(orderId, ORDER_STATUS_CANCELLED);
+        }
+    }
+
+    private int getTotalQuantityForOrderId(int orderId) {
+        int totalQuantity = 0;
+        List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderIdAndProductId(orderId);
+        for (OrderDetails orderDetail : orderDetailList) {
+            totalQuantity += orderDetail.getQuantity();
+        }
+        return totalQuantity;
     }
 
 }

@@ -1,8 +1,7 @@
 package com.retailhub.ordermanagementservice.repository;
 
+import com.retailhub.ordermanagementservice.exception.NotFoundException;
 import com.retailhub.ordermanagementservice.model.OrderDetails;
-import com.retailhub.ordermanagementservice.model.OrderHeader;
-import com.retailhub.ordermanagementservice.util.OrderIdGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -24,6 +23,12 @@ public class OrderDetailsRepository {
             "AND product_id = :productId";
 
     private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details";
+
+    private static final String RETRIEVE_ORDER_DETAILS_BY_ORDER_ID = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details " +
+            "WHERE order_id = :orderId";
+
+    private static final String DELETE_PRODUCT_FROM_CART = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId " +
+            "AND product_id = :productId";
 
     private final RowMapper<OrderDetails> orderDetailsRowMapper = orderDetailsRowMapper();
 
@@ -59,6 +64,11 @@ public class OrderDetailsRepository {
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, orderDetailsRowMapper);
     }
 
+    public List<OrderDetails> retrieveOrderDetailsByOrderIdAndProductId(int orderId) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetails(orderId);
+        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID, mapSqlParameterSource,orderDetailsRowMapper);
+    }
+
     private SqlParameterSource[] parametersToInsertOrderDetails(List<OrderDetails> orderDetailsList) {
         SqlParameterSource[] batchArgs = new SqlParameterSource[orderDetailsList.size()];
         for (int i = 0; i < orderDetailsList.size(); i++) {
@@ -72,6 +82,28 @@ public class OrderDetailsRepository {
             batchArgs[i] = parameterSource;
         }
         return batchArgs;
+    }
+
+    public void deleteProductFromCart(int orderId, int productId, int quantity) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForDeletingOrder(orderId, productId, quantity);
+        int updatedRows = jdbcTemplate.update(DELETE_PRODUCT_FROM_CART, mapSqlParameterSource);
+        if (updatedRows == 0) {
+            throw new NotFoundException("Order Id not found : " + orderId);
+        }
+    }
+
+    private static MapSqlParameterSource parameterSourceForDeletingOrder(int orderId, int productId, int quantity) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        parameterSource.addValue("productId", productId);
+        parameterSource.addValue("quantity", quantity);
+        return parameterSource;
+    }
+
+    private static MapSqlParameterSource parameterSourceForRetrievingOrderDetails(int orderId) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        return parameterSource;
     }
 }
 
