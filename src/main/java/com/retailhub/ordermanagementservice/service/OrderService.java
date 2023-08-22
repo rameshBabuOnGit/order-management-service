@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,11 +29,35 @@ public class OrderService {
     }
 
     @Transactional
-    public void insertOrderDetails(CartDetailsDTO cartDetailsDTO) {
+    public void addProductsToCart(CartDetailsDTO cartDetailsDTO) {
         CartDetails cartDetails = transformCartDetailsDTOToCartDetails(cartDetailsDTO);
-        enrichOrderHeaderAndOrderDetailsWithOrderId(cartDetails.getOrderHeader(), cartDetails.getOrderDetailsList());
+        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersForAUser(cartDetails.getOrderHeader());
+        boolean isOrderIdMatched = isOrderIdMatched(cartDetails.getOrderHeader().getOrderId(), orderHeaders);
+        if (isOrderIdMatched) {
+            UpdateCartDetails(cartDetails.getOrderHeader(), orderHeaders, cartDetails.getOrderDetailsList());
+        } else {
+            enrichOrderHeaderAndOrderDetailsWithOrderId(cartDetails.getOrderHeader(), orderHeaders, cartDetails.getOrderDetailsList());
+            insertOrderHeaderAndOrderDetails(cartDetails);
+        }
+    }
+
+    private void insertOrderHeaderAndOrderDetails(CartDetails cartDetails) {
         orderHeaderRepository.insertOrderHeader(cartDetails.getOrderHeader());
         orderDetailsRepository.insertOrderDetails(cartDetails.getOrderDetailsList());
+    }
+
+    private void UpdateCartDetails(OrderHeader orderHeader, List<OrderHeader> orderHeaders, List<OrderDetails> orderDetailsList) {
+        updateOrderDetails(orderHeader, orderDetailsList);
+    }
+
+    private static boolean isOrderIdMatched(int orderId, List<OrderHeader> orderHeaders) {
+        return orderHeaders.stream().anyMatch(orderHeaderDetail -> orderHeaderDetail.getOrderId() == orderId
+                && orderHeaderDetail.getOrderStatus().equals(ORDER_STATUS_DRAFT));
+    }
+
+    private void updateOrderDetails(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
+        OrderDetails orderDetails = orderDetailsList.get(0);
+        orderDetailsRepository.updateOrderDetailsByOrderId(orderHeader, orderDetails);
     }
 
     private CartDetails transformCartDetailsDTOToCartDetails(CartDetailsDTO cartDetailsDTO) {
@@ -65,16 +88,21 @@ public class OrderService {
                     orderDetails.setQuantity(cartLineDetailsDTO.getQuantity());
                     return orderDetails;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
+    private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderHeader> orderHeaders,List<OrderDetails> orderDetailsList) {
         int orderId = orderHeader.getOrderId() == 0 ? OrderIdGenerator.generateOrderId() : orderHeader.getOrderId();
-        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersForAUser(orderHeader);
-        boolean isOrderIdPresent = orderHeaders.stream().anyMatch(orderHeaderData -> orderHeaderData.getOrderId() == orderId);
-        int newOrderId = isOrderIdPresent ? OrderIdGenerator.generateOrderId() : orderId;
-        orderHeader.setOrderId(newOrderId);
-        orderDetailsList.stream().forEach(orderDetail -> orderDetail.setOrderId(newOrderId));
+        while (true) {
+            boolean isOrderIdMatched = isOrderIdMatched(orderId, orderHeaders);
+            if (isOrderIdMatched) {
+                orderId = OrderIdGenerator.generateOrderId();
+            } else {
+                break;
+            }
+        }
+        int finalOrderId = orderId;
+        orderDetailsList.forEach(orderDetail -> orderDetail.setOrderId(finalOrderId));
     }
 
     public List<CartDetailsDTO> retrieveCartDetailsByDraftStatus(int userId) {
@@ -86,7 +114,7 @@ public class OrderService {
         List<CartDetailsDTO> cartDetailsDTOList = new ArrayList<>();
         List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
         for(OrderHeader orderHeader : orderHeaders) {
-            List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).collect(Collectors.toList());
+            List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).toList();
             cartDetailsDTOList.add(transformCartDetailsToDTO(orderHeader, orderDetailsList));
         }
         return cartDetailsDTOList;
@@ -117,7 +145,7 @@ public class OrderService {
                     cartLine.setQuantity(orderDetails.getQuantity());
                     return cartLine;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional

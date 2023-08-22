@@ -2,6 +2,7 @@ package com.retailhub.ordermanagementservice.repository;
 
 import com.retailhub.ordermanagementservice.exception.NotFoundException;
 import com.retailhub.ordermanagementservice.model.OrderDetails;
+import com.retailhub.ordermanagementservice.model.OrderHeader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -19,8 +20,6 @@ public class OrderDetailsRepository {
 
     private static final String INSERT_ORDER_DETAILS = "INSERT INTO order_details(order_id, product_id, quantity, product_name, product_price)" +
             " VALUES (:orderId, :productId, :quantity, :productName, :productPrice)";
-    private static final String RETRIEVE_ORDER_ID = "SELECT order_id from orders WHERE user_id = :userId " +
-            "AND product_id = :productId";
 
     private static final String RETRIEVE_ORDER_DETAILS = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details";
 
@@ -104,6 +103,23 @@ public class OrderDetailsRepository {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("orderId", orderId);
         return parameterSource;
+    }
+
+    private static MapSqlParameterSource parameterSourceForUpdatingOrderDetails(OrderHeader orderHeader, OrderDetails orderDetails) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("productId", orderDetails.getProductId());
+        parameterSource.addValue("productName", orderDetails.getProductName());
+        parameterSource.addValue("productPrice", orderDetails.getProductPrice());
+        parameterSource.addValue("quantity", orderDetails.getQuantity());
+        parameterSource.addValue("orderId", orderHeader.getOrderId());
+        return parameterSource;
+    }
+
+    public void updateOrderDetailsByOrderId(OrderHeader orderHeader, OrderDetails orderDetails) {
+        int updatedRows = jdbcTemplate.update(INSERT_ORDER_DETAILS, parameterSourceForUpdatingOrderDetails(orderHeader, orderDetails));
+        if (updatedRows == 0) {
+            throw new NotFoundException("Order Id not found : " + orderHeader.getOrderId());
+        }
     }
 }
 

@@ -36,7 +36,7 @@ public class OrderController {
     })
     @PostMapping(value = "/add-to-cart")
     public ResponseEntity<Void> insertOrderDetails(@RequestBody CartDetailsDTO cartDetailsDTO) {
-        orderDetailsService.insertOrderDetails(cartDetailsDTO);
+        orderDetailsService.addProductsToCart(cartDetailsDTO);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
