@@ -57,7 +57,16 @@ public class OrderService {
 
     private void updateOrderDetails(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
         OrderDetails orderDetails = orderDetailsList.get(0);
-        orderDetailsRepository.updateOrderDetailsByOrderId(orderHeader, orderDetails);
+        int orderId = orderHeader.getOrderId();
+        int productId = orderDetails.getProductId();
+        List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderIdAndProductId(orderId, productId);
+        if (orderDetailList.isEmpty()) {
+            orderDetailsRepository.updateOrderDetailsByOrderId(orderHeader, orderDetails);
+        } else {
+            OrderDetails neworderDetails = orderDetailList.get(0);
+            int updatedQuantityForAProduct = neworderDetails.getQuantity() + 1;
+            orderDetailsRepository.updateProductQuantityByOrderIdAndProductId(orderId, productId, updatedQuantityForAProduct);
+        }
     }
 
     private CartDetails transformCartDetailsDTOToCartDetails(CartDetailsDTO cartDetailsDTO) {
@@ -151,7 +160,7 @@ public class OrderService {
 
     @Transactional
     public void deleteOrderFromCart(int orderId, int productId) {
-        orderDetailsRepository.deleteProductFromCart(orderId, productId, 0);
+        orderDetailsRepository.updateProductQuantityByOrderIdAndProductId(orderId, productId, 0);
         int totalQuantity = getTotalQuantityForOrderId(orderId);
         if (totalQuantity == 0) {
             orderHeaderRepository.deleteOrderFromCart(orderId, ORDER_STATUS_CANCELLED);
@@ -160,7 +169,7 @@ public class OrderService {
 
     private int getTotalQuantityForOrderId(int orderId) {
         int totalQuantity = 0;
-        List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderIdAndProductId(orderId);
+        List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderId(orderId);
         for (OrderDetails orderDetail : orderDetailList) {
             totalQuantity += orderDetail.getQuantity();
         }

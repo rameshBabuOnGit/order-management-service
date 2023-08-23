@@ -26,7 +26,10 @@ public class OrderDetailsRepository {
     private static final String RETRIEVE_ORDER_DETAILS_BY_ORDER_ID = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details " +
             "WHERE order_id = :orderId";
 
-    private static final String DELETE_PRODUCT_FROM_CART = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId " +
+    private static final String RETRIEVE_ORDER_DETAILS_BY_ORDER_ID_AND_PRODUCT_ID = "SELECT order_id, product_id, product_name, product_price, quantity FROM order_details " +
+            "WHERE order_id = :orderId AND product_id = :productId";
+
+    private static final String UPDATE_PRODUCT_QUANTITY_BY_ORDER_ID_AND_PRODUCT_ID = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId " +
             "AND product_id = :productId";
 
     private final RowMapper<OrderDetails> orderDetailsRowMapper = orderDetailsRowMapper();
@@ -63,9 +66,14 @@ public class OrderDetailsRepository {
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, orderDetailsRowMapper);
     }
 
-    public List<OrderDetails> retrieveOrderDetailsByOrderIdAndProductId(int orderId) {
-        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetails(orderId);
+    public List<OrderDetails> retrieveOrderDetailsByOrderId(int orderId) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetailsByOrderId(orderId);
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID, mapSqlParameterSource,orderDetailsRowMapper);
+    }
+
+    public List<OrderDetails> retrieveOrderDetailsByOrderIdAndProductId(int orderId, int productId) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetailsByOrderIdAndProductId(orderId, productId);
+        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID_AND_PRODUCT_ID, mapSqlParameterSource,orderDetailsRowMapper);
     }
 
     private SqlParameterSource[] parametersToInsertOrderDetails(List<OrderDetails> orderDetailsList) {
@@ -83,9 +91,9 @@ public class OrderDetailsRepository {
         return batchArgs;
     }
 
-    public void deleteProductFromCart(int orderId, int productId, int quantity) {
+    public void updateProductQuantityByOrderIdAndProductId(int orderId, int productId, int quantity) {
         MapSqlParameterSource mapSqlParameterSource = parameterSourceForDeletingOrder(orderId, productId, quantity);
-        int updatedRows = jdbcTemplate.update(DELETE_PRODUCT_FROM_CART, mapSqlParameterSource);
+        int updatedRows = jdbcTemplate.update(UPDATE_PRODUCT_QUANTITY_BY_ORDER_ID_AND_PRODUCT_ID, mapSqlParameterSource);
         if (updatedRows == 0) {
             throw new NotFoundException("Order Id not found : " + orderId);
         }
@@ -99,9 +107,15 @@ public class OrderDetailsRepository {
         return parameterSource;
     }
 
-    private static MapSqlParameterSource parameterSourceForRetrievingOrderDetails(int orderId) {
+    private static MapSqlParameterSource parameterSourceForRetrievingOrderDetailsByOrderId(int orderId) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("orderId", orderId);
+        return parameterSource;
+    }
+    private static MapSqlParameterSource parameterSourceForRetrievingOrderDetailsByOrderIdAndProductId(int orderId, int productId) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        parameterSource.addValue("productId", productId);
         return parameterSource;
     }
 
@@ -121,5 +135,7 @@ public class OrderDetailsRepository {
             throw new NotFoundException("Order Id not found : " + orderHeader.getOrderId());
         }
     }
+
+
 }
 
