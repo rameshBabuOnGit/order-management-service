@@ -102,6 +102,7 @@ public class OrderService {
             }
         }
         int finalOrderId = orderId;
+        orderHeader.setOrderId(finalOrderId);
         orderDetailsList.forEach(orderDetail -> orderDetail.setOrderId(finalOrderId));
     }
 
