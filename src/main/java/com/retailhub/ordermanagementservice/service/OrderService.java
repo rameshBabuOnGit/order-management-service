@@ -22,6 +22,7 @@ public class OrderService {
     private final OrderDetailsRepository orderDetailsRepository;
     private static final String ORDER_STATUS_DRAFT = "DRAFT";
     private static final String ORDER_STATUS_CANCELLED = "CANCELLED";
+    private static final String ORDER_STATUS_APPROVED = "APPROVED";
 
     public OrderService(OrderHeaderRepository orderHeaderRepository, OrderDetailsRepository orderDetailsRepository) {
         this.orderHeaderRepository = orderHeaderRepository;
@@ -100,7 +101,7 @@ public class OrderService {
                 .toList();
     }
 
-    private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderHeader> orderHeaders,List<OrderDetails> orderDetailsList) {
+    private void enrichOrderHeaderAndOrderDetailsWithOrderId(OrderHeader orderHeader, List<OrderHeader> orderHeaders, List<OrderDetails> orderDetailsList) {
         int orderId = orderHeader.getOrderId() == 0 ? OrderIdGenerator.generateOrderId() : orderHeader.getOrderId();
         while (true) {
             boolean isOrderIdMatched = isOrderIdMatched(orderId, orderHeaders);
@@ -123,7 +124,7 @@ public class OrderService {
     private List<CartDetailsDTO> retrieveCartDetails(List<OrderHeader> orderHeaders) {
         List<CartDetailsDTO> cartDetailsDTOList = new ArrayList<>();
         List<OrderDetails> orderDetails = orderDetailsRepository.retrieveOrderDetails();
-        for(OrderHeader orderHeader : orderHeaders) {
+        for (OrderHeader orderHeader : orderHeaders) {
             List<OrderDetails> orderDetailsList = orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderHeader.getOrderId()).toList();
             cartDetailsDTOList.add(transformCartDetailsToDTO(orderHeader, orderDetailsList));
         }
@@ -175,5 +176,34 @@ public class OrderService {
         }
         return totalQuantity;
     }
+
+    @Transactional
+    public void submitApprovedOrder(CartDetailsDTO cartDetailsDTO) {
+        CartDetails cartDetails = transformCartDetailsDTOToCartDetails(cartDetailsDTO);
+        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersForAUser(cartDetails.getOrderHeader());
+        boolean OrderId = isOrderIdMatched(cartDetails.getOrderHeader().getOrderId(), orderHeaders);
+        if (OrderId) {
+            UpdateApprovedOrderDetails(cartDetails.getOrderHeader(), orderHeaders, cartDetails.getOrderDetailsList());
+        }
+    }
+
+    private void UpdateApprovedOrderDetails(OrderHeader orderHeader, List<OrderHeader> orderHeaders, List<OrderDetails> orderDetailsList) {
+        updateApprovedOrderDetails(orderHeader, orderDetailsList);
+    }
+
+    private void updateApprovedOrderDetails(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
+        int orderId = orderHeader.getOrderId();
+
+        int updatedTotal = orderHeader.getTotalOrderValue();
+        orderDetailsRepository.updateDetailsByOrderId(orderId, updatedTotal, "APPROVED");
+        List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderId(orderId);
+
+        for (int i = 0; i < orderDetailsList.size(); i++) {
+            int productId = orderDetailList.get(i).getProductId();
+            int updatedQuantityForAProduct = orderDetailsList.get(i).getQuantity();
+            orderDetailsRepository.updateProductQuantityByOrderIdAndProductId(orderId, productId, updatedQuantityForAProduct);
+        }
+    }
+
 
 }

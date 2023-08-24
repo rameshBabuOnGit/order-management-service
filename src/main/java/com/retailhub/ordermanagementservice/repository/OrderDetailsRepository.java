@@ -32,6 +32,10 @@ public class OrderDetailsRepository {
     private static final String UPDATE_PRODUCT_QUANTITY_BY_ORDER_ID_AND_PRODUCT_ID = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId " +
             "AND product_id = :productId";
 
+    private static final String UPDATE_ORDERS_BY_ORDER_ID = "UPDATE orders SET total_order_value = :total , order_status = :status WHERE order_id = :orderId ";
+
+    private static final String UPDATE_ORDER_DETAILS_BY_ORDER_ID = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId ";
+
     private final RowMapper<OrderDetails> orderDetailsRowMapper = orderDetailsRowMapper();
 
     public OrderDetailsRepository(NamedParameterJdbcTemplate jdbcTemplate) {
@@ -66,14 +70,14 @@ public class OrderDetailsRepository {
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS, orderDetailsRowMapper);
     }
 
-    public List<OrderDetails> retrieveOrderDetailsByOrderId(int orderId) {
-        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetailsByOrderId(orderId);
-        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID, mapSqlParameterSource,orderDetailsRowMapper);
-    }
-
     public List<OrderDetails> retrieveOrderDetailsByOrderIdAndProductId(int orderId, int productId) {
         MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetailsByOrderIdAndProductId(orderId, productId);
         return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID_AND_PRODUCT_ID, mapSqlParameterSource,orderDetailsRowMapper);
+    }
+
+    public List<OrderDetails> retrieveOrderDetailsByOrderId(int orderId) {
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForRetrievingOrderDetails(orderId);
+        return jdbcTemplate.query(RETRIEVE_ORDER_DETAILS_BY_ORDER_ID, mapSqlParameterSource,orderDetailsRowMapper);
     }
 
     private SqlParameterSource[] parametersToInsertOrderDetails(List<OrderDetails> orderDetailsList) {
@@ -99,6 +103,22 @@ public class OrderDetailsRepository {
         }
     }
 
+    private static MapSqlParameterSource parameterSourceForApprovedOrder(int orderId, int total, String status) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        parameterSource.addValue("total", total);
+        parameterSource.addValue("status", status);
+        return parameterSource;
+    }
+
+    public void updateDetailsByOrderId(int orderId, int total, String status){
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForApprovedOrder(orderId, total, status);
+        int updatedRows = jdbcTemplate.update(UPDATE_ORDERS_BY_ORDER_ID, mapSqlParameterSource);
+        if (updatedRows == 0) {
+            throw new NotFoundException("Order Id not found : " + orderId);
+        }
+    }
+
     private static MapSqlParameterSource parameterSourceForDeletingOrder(int orderId, int productId, int quantity) {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("orderId", orderId);
@@ -116,6 +136,12 @@ public class OrderDetailsRepository {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("orderId", orderId);
         parameterSource.addValue("productId", productId);
+        return parameterSource;
+    }
+
+    private static MapSqlParameterSource parameterSourceForRetrievingOrderDetails(int orderId) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
         return parameterSource;
     }
 
