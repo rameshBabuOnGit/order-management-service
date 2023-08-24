@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -24,6 +25,7 @@ public class OrderHeaderRepository {
     private static final String RETRIEVE_ORDER_HEADER_DETAILS_BY_USER = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId";
 
+    private static final String UPDATE_ORDERS_BY_ORDER_ID = "UPDATE orders SET total_order_value = :total , order_status = :status WHERE order_id = :orderId ";
     private static final String DELETE_ORDER_FROM_CART = "UPDATE orders SET order_status = :orderStatus WHERE order_id = :orderId ";
 
     private static final String RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER = "SELECT order_id, user_id, total_order_value, order_status " +
@@ -52,6 +54,14 @@ public class OrderHeaderRepository {
             log.info("Inserted orders for user : {}", orderHeader);
         } else {
             throw new RuntimeException("Insert failed for user : " + orderHeader);
+        }
+    }
+
+    public void updateDetailsByOrderId(int orderId, BigDecimal total, String status){
+        MapSqlParameterSource mapSqlParameterSource = parameterSourceForApprovedOrder(orderId, total, status);
+        int updatedRows = jdbcTemplate.update(UPDATE_ORDERS_BY_ORDER_ID, mapSqlParameterSource);
+        if (updatedRows == 0) {
+            throw new NotFoundException("Order Id not found : " + orderId);
         }
     }
 
@@ -95,11 +105,19 @@ public class OrderHeaderRepository {
         mapSqlParameterSource.addValue("orderStatus", ORDER_STATUS_DRAFT);
         return mapSqlParameterSource;
     }
+
+    private static MapSqlParameterSource parameterSourceForApprovedOrder(int orderId, BigDecimal total, String status) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderId", orderId);
+        parameterSource.addValue("total", total);
+        parameterSource.addValue("status", status);
+        return parameterSource;
+    }
     private RowMapper<OrderHeader> orderHeaderRowMapper() {
         return (rs, rowNum) -> OrderHeader.builder()
                 .userId(rs.getInt("user_id"))
                 .orderId(rs.getInt("order_id"))
-                .totalOrderValue(rs.getInt("total_order_value"))
+                .totalOrderValue(rs.getBigDecimal("total_order_value"))
                 .orderStatus(rs.getString("order_status"))
                 .build();
     }

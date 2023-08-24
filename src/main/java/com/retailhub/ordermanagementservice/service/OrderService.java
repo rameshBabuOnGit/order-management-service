@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -194,8 +195,8 @@ public class OrderService {
     private void updateApprovedOrderDetails(OrderHeader orderHeader, List<OrderDetails> orderDetailsList) {
         int orderId = orderHeader.getOrderId();
 
-        int updatedTotal = orderHeader.getTotalOrderValue();
-        orderDetailsRepository.updateDetailsByOrderId(orderId, updatedTotal, "APPROVED");
+        BigDecimal updatedTotal = orderHeader.getTotalOrderValue();
+        orderHeaderRepository.updateDetailsByOrderId(orderId, updatedTotal, "APPROVED");
         List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderId(orderId);
 
         for (int i = 0; i < orderDetailsList.size(); i++) {

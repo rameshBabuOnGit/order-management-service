@@ -31,9 +31,6 @@ public class OrderDetailsRepository {
 
     private static final String UPDATE_PRODUCT_QUANTITY_BY_ORDER_ID_AND_PRODUCT_ID = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId " +
             "AND product_id = :productId";
-
-    private static final String UPDATE_ORDERS_BY_ORDER_ID = "UPDATE orders SET total_order_value = :total , order_status = :status WHERE order_id = :orderId ";
-
     private static final String UPDATE_ORDER_DETAILS_BY_ORDER_ID = "UPDATE order_details SET quantity = :quantity WHERE order_id = :orderId ";
 
     private final RowMapper<OrderDetails> orderDetailsRowMapper = orderDetailsRowMapper();
@@ -98,22 +95,6 @@ public class OrderDetailsRepository {
     public void updateProductQuantityByOrderIdAndProductId(int orderId, int productId, int quantity) {
         MapSqlParameterSource mapSqlParameterSource = parameterSourceForDeletingOrder(orderId, productId, quantity);
         int updatedRows = jdbcTemplate.update(UPDATE_PRODUCT_QUANTITY_BY_ORDER_ID_AND_PRODUCT_ID, mapSqlParameterSource);
-        if (updatedRows == 0) {
-            throw new NotFoundException("Order Id not found : " + orderId);
-        }
-    }
-
-    private static MapSqlParameterSource parameterSourceForApprovedOrder(int orderId, int total, String status) {
-        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
-        parameterSource.addValue("orderId", orderId);
-        parameterSource.addValue("total", total);
-        parameterSource.addValue("status", status);
-        return parameterSource;
-    }
-
-    public void updateDetailsByOrderId(int orderId, int total, String status){
-        MapSqlParameterSource mapSqlParameterSource = parameterSourceForApprovedOrder(orderId, total, status);
-        int updatedRows = jdbcTemplate.update(UPDATE_ORDERS_BY_ORDER_ID, mapSqlParameterSource);
         if (updatedRows == 0) {
             throw new NotFoundException("Order Id not found : " + orderId);
         }
