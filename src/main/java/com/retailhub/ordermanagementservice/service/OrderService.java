@@ -33,7 +33,7 @@ public class OrderService {
     @Transactional
     public void addProductsToCart(CartDetailsDTO cartDetailsDTO) {
         CartDetails cartDetails = transformCartDetailsDTOToCartDetails(cartDetailsDTO);
-        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersForAUser(cartDetails.getOrderHeader());
+        List<OrderHeader> orderHeaders = orderHeaderRepository.getOrderHeadersWithOrderStatus(ORDER_STATUS_DRAFT);
         boolean isOrderIdMatched = isOrderIdMatched(cartDetails.getOrderHeader().getOrderId(), orderHeaders);
         if (isOrderIdMatched) {
             UpdateCartDetails(cartDetails.getOrderHeader(), orderHeaders, cartDetails.getOrderDetailsList());
@@ -196,7 +196,7 @@ public class OrderService {
         int orderId = orderHeader.getOrderId();
 
         BigDecimal updatedTotal = orderHeader.getTotalOrderValue();
-        orderHeaderRepository.updateDetailsByOrderId(orderId, updatedTotal, "APPROVED");
+        orderHeaderRepository.updateDetailsByOrderId(orderId, updatedTotal, ORDER_STATUS_APPROVED);
         List<OrderDetails> orderDetailList = orderDetailsRepository.retrieveOrderDetailsByOrderId(orderId);
 
         for (int i = 0; i < orderDetailsList.size(); i++) {

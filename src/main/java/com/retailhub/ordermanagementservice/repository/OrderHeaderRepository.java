@@ -30,6 +30,8 @@ public class OrderHeaderRepository {
 
     private static final String RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER = "SELECT order_id, user_id, total_order_value, order_status " +
             "FROM orders WHERE user_id = :userId";
+    private static final String RETRIEVE_ORDER_HEADER_DETAILS_WITH_ORDER_STATUS = "SELECT order_id, user_id, total_order_value, order_status " +
+            "FROM orders WHERE order_status = :orderStatus";
 
     private final RowMapper<OrderHeader> orderHeaderRowMapper = orderHeaderRowMapper();
 
@@ -94,6 +96,13 @@ public class OrderHeaderRepository {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("userId", orderHeader.getUserId());
         List<OrderHeader> orderHeaders = jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS_FOR_USER, parameterSource, orderHeaderRowMapper);
+        return orderHeaders;
+    }
+
+    public List<OrderHeader> getOrderHeadersWithOrderStatus(String orderStatus) {
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("orderStatus", orderStatus);
+        List<OrderHeader> orderHeaders = jdbcTemplate.query(RETRIEVE_ORDER_HEADER_DETAILS_WITH_ORDER_STATUS, parameterSource, orderHeaderRowMapper);
         return orderHeaders;
     }
 
